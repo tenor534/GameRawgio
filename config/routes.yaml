@@ -3,3 +3,21 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+hello_world:
+    path: /hello
+    controller: App\Controller\HelloController::index
+
+games_list:
+    path: /api/games
+    controller: App\Controller\VideoGameController::listGames
+    methods: GET
+    defaults:
+        _format: json
+
+api_video_game_csv_json:
+    path: /api/games/fusion/json
+    controller: App\Controller\VideoGameController::fusionnerGames
+    methods: GET
+    defaults:
+        _format: json

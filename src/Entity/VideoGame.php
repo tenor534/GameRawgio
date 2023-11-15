@@ -127,4 +127,9 @@ class VideoGame
 
         return $this;
     }
+
+    public function toArray($request)
+   {
+       return $this->toArray($request);
+   }
 }
