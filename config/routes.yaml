@@ -3,3 +3,42 @@ controllers:
         path: ../src/Controller/
         namespace: App\Controller
     type: attribute
+
+hello_world:
+    path: /hello
+    controller: App\Controller\HelloController::index
+
+games_list:
+    path: /api/games
+    controller: App\Controller\VideoGameController::listGames
+    methods: GET
+    defaults:
+        _format: json
+
+api_video_game_csv_json:
+    path: /api/games/fusion/json
+    controller: App\Controller\VideoGameController::fusionnerGamesToJSON
+    methods: GET
+    defaults:
+        _format: json
+
+api_video_game_csv_json2:
+    path: /api/games/fusion/json2
+    controller: App\Controller\VideoGameController::fusionnerGamesToJSON2
+    methods: GET
+    defaults:
+        _format: json
+
+api_video_game_csv_csv:
+    path: /api/games/fusion/csv
+    controller: App\Controller\VideoGameController::fusionnerGamesToCSV
+    methods: GET
+    defaults:
+        _format: csv
+
+api_video_game_csv_xml:
+    path: /api/games/fusion/xml
+    controller: App\Controller\VideoGameController::fusionnerGamesToXML
+    methods: GET
+    defaults:
+        _format: xml

@@ -21,6 +21,25 @@ class VideoGameRepository extends ServiceEntityRepository
         parent::__construct($registry, VideoGame::class);
     }
 
+
+
+    
+    /**
+     * @return VideoGame[] Returns an array of VideoGame objects
+     */
+    public function findBynameField($value): array
+    {
+        return $this->createQueryBuilder('v')
+            ->andWhere('v.name = :val')
+            ->setParameter('val', $value)
+            ->orderBy('v.id', 'ASC')
+            ->setMaxResults(10)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    
 //    /**
 //     * @return VideoGame[] Returns an array of VideoGame objects
 //     */
