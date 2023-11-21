@@ -9,8 +9,14 @@ use App\Repository\PlatformRepository;
 use App\Repository\UserRepository;
 use App\Repository\VideoGameRepository;
 use App\Service\VideoGameService;
+
+use App\Store\GameCsvDataStore;
+use App\Store\GameCvsDBFusionDataStore;
+use App\Store\GameDBDataStore;
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -32,14 +38,15 @@ class VideoGameController extends AbstractController
     private $serializer; //
     private $jeuRepository;
     private $entityManager;
+    private $parameterBag;
 
     //Instance
-    public function __construct(SerializerInterface $serializer, VideoGameRepository $jeuRepository, EntityManagerInterface $entityManager)
+    public function __construct(SerializerInterface $serializer, VideoGameRepository $jeuRepository, EntityManagerInterface $entityManager, ParameterBagInterface $parameterBag)
     {
-        $this->serializer = $serializer;
-        $this->jeuRepository = $jeuRepository;
-        $this->entityManager = $entityManager;
-
+        $this->serializer       = $serializer;
+        $this->jeuRepository    = $jeuRepository;
+        $this->entityManager    = $entityManager;
+        $this->parameterBag     = $parameterBag;
     }
 
     #[Route('/', name: 'app_video_game')]
@@ -61,7 +68,6 @@ class VideoGameController extends AbstractController
         return $this->render('video_game/_search.html.twig', [
             'games' => $games['results']
         ]);
-
     }
 
     #[Route('/add-video-game/{id}', name: 'app_video_game_add', methods: ['POST'])]
@@ -109,6 +115,11 @@ class VideoGameController extends AbstractController
         ]);
     }
 
+    /**
+     * @param VideoGame $videoGame
+     * @param EntityManagerInterface $em
+     * @return Response
+     */
     #[Route('/delete/{id}', name: 'app_video_game_delete', methods: ['POST'])]
     public function delete(VideoGame $videoGame, EntityManagerInterface $em)
     {
@@ -121,6 +132,10 @@ class VideoGameController extends AbstractController
         ]);
     }
 
+    /**
+     * @param EntityManagerInterface $entityManager
+     * @return JsonResponse
+     */
     #[Route('/api/games', name: 'api_video_game_list', methods: ['GET'])]
     public function listGames(EntityManagerInterface $entityManager): JsonResponse
     {
@@ -131,137 +146,49 @@ class VideoGameController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        //dd($this->json($games));
         return $this->json($games);
     }
 
+    /**
+     * @return StreamedResponse
+     */
     #[Route('/api/games/fusion/json', name: 'api_video_game_csv_json', methods: ['GET'])]
-    public function fusionnerGamesToJSON(EntityManagerInterface $entityManager): JsonResponse
+    public function fusionnerGamesToJSON(
+    ): StreamedResponse
     {
-        // Lire le CSV
-        /*
-        $csv = Reader::createFromPath('/laragon/www/SymfonyILoveGamer/src/Datas/games.csv', 'r');
-        $csv->setHeaderOffset(0);
-        $jeuxCsv = $csv->getRecords(); // Récupérer les jeux du CSV
-        */
+        $response = new StreamedResponse(function () {
+        //Génération from Cvs file
+        $gameCsvDataStore   = new GameCsvDataStore($this->parameterBag->get('API_CSV_FILE_PATH'));
+        $gameCsvDatas       = $gameCsvDataStore->fetchAll();
 
-        $csvFile = "/laragon/www/GameRawgio/src/Datas/games.csv";
+        //Génération from DB Table video_game
+        $gameDBDataStore    = new GameDBDataStore();
+        $gameDBDatas        = $gameDBDataStore->fetchAll($this->entityManager);
 
-        $csvData = [];
-        
-        if (($handle = fopen($csvFile, 'r')) !== false) {
-            $headers = fgetcsv($handle); // Récupérer les entêtes du fichier CSV
-            while (($row = fgetcsv($handle)) !== false) {
-                $rowData = [];
-                foreach ($headers as $i => $header) {
-                    $rowData[$header] = $row[$i];
-                }
-                $csvData[] = $rowData;
+        $fusionGamesGenerators = new GameCvsDBFusionDataStore();
+        $gameDBCsvDatas = $fusionGamesGenerators->fusionGamesGenerators($gameDBDatas, $gameCsvDatas);
+
+        echo '['; // Open the JSON array.
+        $first = true;
+        foreach ($gameDBCsvDatas as $gameDBCsvData) {
+            if (!$first) {
+                echo ','; // Add a comma between each JSON object.
             }
-            fclose($handle);
+            echo json_encode($gameDBCsvData);
+            $first = false;
         }
+        echo ']'; // Close the JSON array.
+        });
 
-        //dd($csvData);
-
-        $jeuxCsv = $csvData;
-        
-        // Récupérer les jeux de la base de données
-        $repository = $entityManager->getRepository('App\Entity\VideoGame');
-        $jeuxBDD    = $repository->findAll();
-        //$jeuxBDD = $this->VideoGameRepository->findAll();
-        
-        //dd($jeuxBDD);
-        // Fusionner les jeux du CSV avec ceux de la base de données
-        $jeuxFusionnes = [];
-        $id = 0;
-
-        //Première table : jeux du csv qui ne matchent pas dans la base
-        foreach ($jeuxCsv as $jeuCsv) {
-
-            //dd($jeuCsv);
-            //$id = $jeuCsv['id']; // Identifier les jeux par un champ (id par exemple)
-
-            /*
-                VideoGameController.php on line 177:
-                array:4 [▼
-                "Game Title" => "The Legend of Zelda: Breath of the Wild"
-                "Release Year" => "2017"
-                "Age Minimum Recommended" => "16+"
-                "Solo Mode" => "Yes"
-                ]
-
-
-                $jeuxFusionnes[$id]["name"]     = $jeuCsv['Game Title']; 
-                $jeuxFusionnes[$id]["released"] = $jeuCsv['Release Year']; 
-               
-
-            */
-
-            $name = $jeuCsv['Game Title'];            
-
-            // Recherche du jeu correspondant dans la base de données
-            //$jeuBDD = $this->jeuRepository->find($id);
-            //dd($repository->findBynameField($name));           
-
-            // Fusionner les données du CSV avec celles de la BDD s'il existe
-            //$jeuxFusionnes[$id] = $jeuBDD ? array_merge($jeuBDD->toArray(), $jeuCsv) : $jeuCsv;
-            //$jeuxFusionnes[$id] = count($repository->findBynameField($name))? array_merge($jeuBDD->toArray(), $jeuCsv) : $jeuCsv;
-            
-            if(count($repository->findBynameField($name)) == 0){
-                $jeuxFusionnes[$id]["name"]     = $jeuCsv['Game Title']; 
-                $jeuxFusionnes[$id]["released"] = $jeuCsv['Release Year']; 
-                $id++;
-            }            
-        }
-
-        //dd($jeuxFusionnes);
-
-        foreach ($jeuxBDD as $jeuBDD) {
-            $name = $jeuBDD->getName();
-
-            //dd($name);
-            // Si le jeu de la BDD n'a pas été fusionné précédemment
-            if (!isset($jeuxFusionnes[$name])) {
-                /*
-                    App\Entity\VideoGame {#860 ▼
-                    -id: 1
-                    -name: "DOOM (2016)"
-                    -released: DateTime @1463097600 {#864 ▶}
-                    -rating: 4.38
-                    -imgUrl: "https://media.rawg.io/media/games/c4b/c4b0cab189e73432de3a250d8cf1c84e.jpg"
-                    -platfomrs: Doctrine\ORM\PersistentCollection {#848 ▶}
-                    -apiId: 2454
-                }
-
-                */
-                //dd( $jeuBDD);
-                //$jeuxFusionnes[$id] = (array) $jeuBDD;     
-                
-                $jeuxFusionnes[$id]["name"]     = $jeuBDD->getName(); 
-                $jeuxFusionnes[$id]["released"] = $jeuBDD->getReleased(); 
-                
-                
-                $id++;
-            }
-        }
-        //dd($jeuxFusionnes);
-
-        // Retourner la réponse JSON contenant tous les jeux fusionnés
-        /*
-        $response = $this->serializer->serialize(
-            array_values($jeuxFusionnes),
-            'json',
-            [AbstractNormalizer::IGNORED_ATTRIBUTES => ['propriete_a_exclure_si_necessaire']]
-        );*/
-
-        //return new JsonResponse($response, Response::HTTP_OK, [], true);
-        return new JsonResponse($jeuxFusionnes);
+        $response->headers->set('Content-Type', 'application/json');
+        return $response;
     }
 
     /**
      * @Route("/api/games/fusion/json2", name="api_video_game_csv_json")
      */
-    #[Route('/api/games/fusion/json2', name: 'api_video_game_csv_json', methods: ['GET'])]
+    /*
+     #[Route('/api/games/fusion/json2', name: 'api_video_game_csv_json', methods: ['GET'])]
     public function fusionnerGamesToJSON2(EntityManagerInterface $entityManager): StreamedResponse
     {
         $response = new StreamedResponse(function () {
@@ -290,9 +217,10 @@ class VideoGameController extends AbstractController
     {
         foreach ($games as $game) {
             yield [
-                'id'    => $game->getId(),
-                'nom'   => $game->getName(),
+                'id'        => $game->getId(),
+                'nom'       => $game->getName(),
+                'released'  => $game->getReleased(),
             ];
         }
-    }
+    }*/
 }

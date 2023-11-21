@@ -2,6 +2,8 @@
 
 namespace App\Store;
 
+use phpDocumentor\Reflection\Types\Boolean;
+
 class GameCsvDataStore
 {
     /**
@@ -22,7 +24,7 @@ class GameCsvDataStore
     /**
      * @return \Generator
      */
-    public function fetchAll(){
+    public function fetchAll() {
         $handle = fopen($this->gameCvsDataStorePath, 'r');
         if ($handle === false){
             throw new \RuntimeException(sprintf(
@@ -34,15 +36,23 @@ class GameCsvDataStore
             //Reads first line as it contains data header
             $header = fgetcsv($handle);
             while(($data = fgetcsv($handle)) !== false){
-                yield array_combine(
+
+                yield [
+                    'id'        => 0,
+                    'name'      => $data[0],
+                    'released'  => $data[1]
+                ];
+                /*yield array_combine(
                     $header,
                     $data
-                );
+                );*/
             }
         } catch (\Exception $e){
             throw  $e;
         } finally {
             fclose($handle);
         }
+
+        return true;
     }
 }

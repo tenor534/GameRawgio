@@ -10,18 +10,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class HelloController extends AbstractController
 {
-    #[Route('/hello', name: 'app_hello')]
+    /*#[Route('/hello', name: 'app_hello')]
     public function index_(): Response
     {
         return $this->render('hello/index.html.twig', [
             'controller_name' => 'HelloController',
         ]);
-    }
+    }*/
 
     /**
      * @Route("/hello", name="hello_world")
      */
-    /*#[Route('/hello', name: 'hello_world')]
+    #[Route('/hello', name: 'hello_world')]
     public function index(): JsonResponse
     {
         $data = [
@@ -32,7 +32,7 @@ class HelloController extends AbstractController
 
         return new JsonResponse($data);
 
-    }*/
+    }
 }
 
 ?>
