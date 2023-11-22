@@ -48,5 +48,5 @@ Attention, la structure de l'Api originale ne doit pas changer, mais il doit aus
 => #[Route('/api/games/fusion/json', name: 'api_video_game_csv_json', methods: ['GET'])]
 => class VideoGameController 
 => .env (changer la variable d'environnement avec le bon fichier csv) : 
-# API_CSV_FILE_PATH='/Users/srako/PhpstormProjects/symfony/GameRawgio/src/Datas/games.csv'
-# API_CSV_FILE_PATH='/Users/srako/PhpstormProjects/symfony/GameRawgio/src/Datas/games2.csv'
+API_CSV_FILE_PATH='/Users/srako/PhpstormProjects/symfony/GameRawgio/src/Datas/games.csv'
+API_CSV_FILE_PATH='/Users/srako/PhpstormProjects/symfony/GameRawgio/src/Datas/games2.csv'
