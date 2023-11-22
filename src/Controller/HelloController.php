@@ -10,15 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class HelloController extends AbstractController
 {
-    /*#[Route('/hello', name: 'app_hello')]
-    public function index_(): Response
-    {
-        return $this->render('hello/index.html.twig', [
-            'controller_name' => 'HelloController',
-        ]);
-    }*/
-
-    /**
+     /**
      * @Route("/hello", name="hello_world")
      */
     #[Route('/hello', name: 'hello_world')]
@@ -31,8 +23,15 @@ class HelloController extends AbstractController
         $jd = new JsonResponse($data);
 
         return new JsonResponse($data);
-
     }
+
+    /*#[Route('/hello', name: 'app_hello')]
+    public function index_(): Response
+    {
+        return $this->render('hello/index.html.twig', [
+            'controller_name' => 'HelloController',
+        ]);
+    }*/
 }
 
 ?>

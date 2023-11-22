@@ -29,6 +29,9 @@ class GameDBDataStore
                 'id'        => $game->getId(),
                 'name'      => $game->getName(),
                 'released'  => $game->getReleased(),
+                'rating'    => $game->getRating(),
+                'img_url'   => $game->getImgUrl(),
+                'api_id'    => $game->getApiId()
             ];
         }
     }

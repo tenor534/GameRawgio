@@ -135,6 +135,9 @@ class VideoGameController extends AbstractController
     /**
      * @param EntityManagerInterface $entityManager
      * @return JsonResponse
+     *
+     *  Chaque jeu de la base de données doit apparaître dans le résultat du Json.
+     * en utilisant createQueryBuilder()
      */
     #[Route('/api/games', name: 'api_video_game_list', methods: ['GET'])]
     public function listGames(EntityManagerInterface $entityManager): JsonResponse
@@ -142,7 +145,14 @@ class VideoGameController extends AbstractController
         $repository = $entityManager->getRepository('App\Entity\VideoGame'); // Supposons que votre entité de jeu soit 'Game'
         
         $games = $repository->createQueryBuilder('g')
-            ->select('g.id', 'g.name')
+            ->select(
+                'g.id',
+                'g.name',
+                'g.released',
+                'g.rating',
+                'g.imgUrl',
+                'g.apiId'
+            )
             ->getQuery()
             ->getResult();
 
@@ -150,7 +160,41 @@ class VideoGameController extends AbstractController
     }
 
     /**
+     * @param EntityManagerInterface $entityManager
+     * @return JsonResponse
+     *
+     *  Chaque jeu de la base de données doit apparaître dans le résultat du Json.
+     */
+    #[Route('/api/games/db', name: 'api_video_game_db_list', methods: ['GET'])]
+    public function listDbGames(EntityManagerInterface $entityManager): JsonResponse
+    {
+        //Génération from DB Table video_game
+        $gameDBDataStore    = new GameDBDataStore();
+        $gameDBDatas        = $gameDBDataStore->fetchAll($this->entityManager);
+
+        return $this->json($gameDBDatas);
+    }
+
+    /**
+     * @param EntityManagerInterface $entityManager
+     * @return JsonResponse
+     * @throws \Exception
+     *
+     *  Chaque jeu du Csv doit apparaître dans le résultat en Json.
+     */
+    #[Route('/api/games/csv', name: 'api_video_game_csv_list', methods: ['GET'])]
+    public function listCsvGames(EntityManagerInterface $entityManager): JsonResponse
+    {
+        //Génération from Cvs file
+        $gameCsvDataStore   = new GameCsvDataStore($this->parameterBag->get('API_CSV_FILE_PATH'));
+        $gameCsvDatas       = $gameCsvDataStore->fetchAll();
+
+        return $this->json($gameCsvDatas);
+    }
+
+    /**
      * @return StreamedResponse
+     * Si des données du Csv et de la base concernent le même jeu, les données doivent être fusionées.
      */
     #[Route('/api/games/fusion/json', name: 'api_video_game_csv_json', methods: ['GET'])]
     public function fusionnerGamesToJSON(
@@ -165,6 +209,7 @@ class VideoGameController extends AbstractController
         $gameDBDataStore    = new GameDBDataStore();
         $gameDBDatas        = $gameDBDataStore->fetchAll($this->entityManager);
 
+        //Fusion Csv et DB
         $fusionGamesGenerators = new GameCvsDBFusionDataStore();
         $gameDBCsvDatas = $fusionGamesGenerators->fusionGamesGenerators($gameDBDatas, $gameCsvDatas);
 
@@ -183,44 +228,4 @@ class VideoGameController extends AbstractController
         $response->headers->set('Content-Type', 'application/json');
         return $response;
     }
-
-    /**
-     * @Route("/api/games/fusion/json2", name="api_video_game_csv_json")
-     */
-    /*
-     #[Route('/api/games/fusion/json2', name: 'api_video_game_csv_json', methods: ['GET'])]
-    public function fusionnerGamesToJSON2(EntityManagerInterface $entityManager): StreamedResponse
-    {
-        $response = new StreamedResponse(function () {
-            $repository = $this->entityManager->getRepository('App\Entity\VideoGame');
-
-            $games = $repository->findAll();
-            $gameGenerator = $this->getGamesGenerator($games);
-
-            echo '['; // Open the JSON array.
-            $first = true;
-
-            foreach ($gameGenerator as $gameData) {
-                if (!$first) {
-                    echo ','; // Add a comma between each JSON object.
-                }
-                echo json_encode($gameData);
-                $first = false;
-            }
-            echo ']'; // Close the JSON array.
-        });
-
-        $response->headers->set('Content-Type', 'application/json');
-        return $response;
-    }
-    private function getGamesGenerator($games)
-    {
-        foreach ($games as $game) {
-            yield [
-                'id'        => $game->getId(),
-                'nom'       => $game->getName(),
-                'released'  => $game->getReleased(),
-            ];
-        }
-    }*/
 }

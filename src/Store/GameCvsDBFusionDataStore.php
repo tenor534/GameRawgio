@@ -8,8 +8,8 @@ use App\Store\GameCsvDataStore;
 class GameCvsDBFusionDataStore
 {
     /**
-     * @param $generator1
-     * @param $generator2
+     * @param $generator1 : $gameDBDatas
+     * @param $generator2 : $gameCsvDatas
      * @return \Generator
      */
     function fusionGamesGenerators($generator1, $generator2) {
@@ -24,7 +24,9 @@ class GameCvsDBFusionDataStore
         }
 
         foreach ($generator2 as $game) {
-            $name = $game['name'];
+            //dd($game);
+            $name = $game['Game Title']; //Le titre du header dans le CSV
+
             if (!isset($games[$name])) {
                 $games[$name] = $game;
                 yield $game;

@@ -15,6 +15,20 @@ games_list:
     defaults:
         _format: json
 
+api_video_game_csv_list:
+    path: /api/games/csv
+    controller: App\Controller\VideoGameController::listCsvGames
+    methods: GET
+    defaults:
+        _format: json
+
+api_video_game_db_list:
+    path: /api/games/db
+    controller: App\Controller\VideoGameController::listDbGames
+    methods: GET
+    defaults:
+        _format: json
+
 api_video_game_csv_json:
     path: /api/games/fusion/json
     controller: App\Controller\VideoGameController::fusionnerGamesToJSON

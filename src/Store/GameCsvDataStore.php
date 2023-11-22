@@ -35,17 +35,20 @@ class GameCsvDataStore
         try{
             //Reads first line as it contains data header
             $header = fgetcsv($handle);
-            while(($data = fgetcsv($handle)) !== false){
 
-                yield [
-                    'id'        => 0,
-                    'name'      => $data[0],
-                    'released'  => $data[1]
-                ];
-                /*yield array_combine(
+            while(($data = fgetcsv($handle)) !== false){
+                /*yield [
+                    'id'            => 0,       //non renseigné dans le csv
+                    'name'          => $data[0],//Game Title
+                    'released'      => $data[1],//Release Date
+                    'publisher'     => $data[2],//Publisher ?
+                    'ageMinimum'    => $data[3],//Release Date
+                    'soloMode'      => $data[4],//Release Date
+                ];*/
+                yield array_combine(
                     $header,
                     $data
-                );*/
+                );
             }
         } catch (\Exception $e){
             throw  $e;
