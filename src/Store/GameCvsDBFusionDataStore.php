@@ -23,8 +23,7 @@ class GameCvsDBFusionDataStore
             }
         }
 
-        foreach ($generator2 as $game) {
-            //dd($game);
+        foreach ($generator2 as $game) {            
             $name = $game['Game Title']; //Le titre du header dans le CSV
 
             if (!isset($games[$name])) {
